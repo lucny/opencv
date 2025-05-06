@@ -164,3 +164,77 @@ class ImageCV:
         :return: None
         """
         cv2.line(self.image, start_point, end_point, color, thickness)
+
+
+    def resize(self, width=None, height=None, interpolation=cv2.INTER_LINEAR):
+        """
+        Změní velikost obrázku podle zadané šířky a výšky.
+        Pokud je zadána pouze šířka nebo výška, zachová poměr stran.
+        :param width: Nová šířka obrázku.
+        :param height: Nová výška obrázku.
+        :param interpolation: Metoda interpolace (např. INTER_LINEAR, INTER_AREA).
+        :return: Změněný obrázek.
+        """
+        (h, w) = self.image.shape[:2]
+        if width is None and height is None:
+            return self.image
+
+        if width is None:
+            ratio = height / float(h)
+            dim = (int(w * ratio), height)
+        else:
+            ratio = width / float(w)
+            dim = (width, int(h * ratio))
+
+        resized = cv2.resize(self.image, dim, interpolation=interpolation)
+        return resized
+
+
+    def blur(self, ksize=(5, 5)):
+        """
+        Aplikuje Gaussovo rozmazání na obrázek.
+        :param ksize: Velikost jádra (šířka, výška).
+        :return: Rozmazaný obrázek.
+        """
+        blurred = cv2.GaussianBlur(self.image, ksize, 0)
+        return blurred
+
+
+    def threshold(self, thresh=127, maxval=255):
+        """
+        Aplikuje binární prahování na obrázek.
+        :param thresh: Prahová hodnota.
+        :param maxval: Hodnota přiřazená pixelům nad prahem.
+        :return: Prahovaný obrázek.
+        """
+        if self.gray is None:
+            self.to_gray()
+        _, thresh_img = cv2.threshold(self.gray, thresh, maxval, cv2.THRESH_BINARY)
+        return thresh_img
+
+
+    def find_and_draw_contours(self):
+        """
+        Najde a vykreslí všechny kontury v obrázku.
+        :return: Obrázek s vykreslenými konturami.
+        """
+        if self.gray is None:
+            self.to_gray()
+        edges = cv2.Canny(self.gray, 50, 150)
+        contours, _ = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        img_copy = self.image.copy()
+        cv2.drawContours(img_copy, contours, -1, (0, 255, 0), 2)
+        return img_copy
+
+
+    def rotate(self, angle):
+        """
+        Otočí obrázek kolem jeho středu o zadaný úhel.
+        :param angle: Úhel otočení ve stupních (kladně proti směru hodinových ručiček).
+        :return: Otočený obrázek.
+        """
+        (h, w) = self.image.shape[:2]
+        center = (w // 2, h // 2)
+        M = cv2.getRotationMatrix2D(center, angle, 1.0)
+        rotated = cv2.warpAffine(self.image, M, (w, h))
+        return rotated
